@@ -1,0 +1,175 @@
+{% extends 'base.html' %}
+
+{% block content %}
+  {% if message %}
+   <div class="messSuccess">{{ message }}</div>
+  {% endif %}
+  <form class="createSchema" method="post"
+        action="{% url 'schemas:create_schema' %}">
+    {% csrf_token %}
+    <div class="schemaCont">
+
+      <h4>New Schema</h4>
+
+      <div><label for="schema_name">Name</label></div>
+      {{ schema_form.name }}<br><br>
+      <div><label for="column_separator">Column separator</label></div>
+      {{ schema_form.column_separator }}<br><br>
+      <div><label for="string_character">String character</label></div>
+      {{ schema_form.column_characters }}<br><br>
+    </div>
+    <button id="createSchema" type="submit" class="btn btn-primary">Submit
+    </button>
+
+
+    <div id="columns" data-counter="1">
+      <h4>Schema columns:</h4>
+      <div class="contDataInputs">
+        {{ formset.management_form }}
+
+        {% for form in formset %}
+          <div class="formCont">
+            {% for i in form %}
+              <div
+                  class="extraColumns {% if i.name == 'range_end' %}hiddenSelect {% elif i.name == 'range_start' %}hiddenSelect{% endif %}">
+                <label for="{{ i.id_for_label }}">
+                  {% if i.label == 'Range start' %}
+                    From {% elif i.label == 'Range end' %} To
+                    {% elif i.label == 'Id' %}{% elif i.label == 'Name' %}Column
+                    name {% else %}{{ i.label }} {% endif %}</label>
+                {{ i }}
+              </div>
+            {% endfor %}
+            <p style="align-self: end;">
+              <button type="button" style="color: red" id="delButton"
+                      class="btn btn-link">Delete
+              </button>
+            </p>
+          </div>
+
+        {% endfor %}
+
+        {#          {% for form in formset %}#}
+        {#            <div class="formCont">#}
+        {#            {% for i in form %}#}
+        {#            <div class="test">{{ i.label }}</div>#}
+        {#            {% endfor %}#}
+        {#            </div>#}
+        {#          {% endfor %}#}
+
+      </div>
+
+      <div class="column">
+
+        <div class="columnInnerCont">
+
+          <div class="hidden" id="emptyForm">
+            {% for form in formset.empty_form %}
+              <div
+                  class="{% if form.name == 'range_end' %}hiddenSelect {% elif form.name == 'range_start' %}hiddenSelect{% endif %}">
+                <label for="{{ form.id_for_label }}">
+                  {% if form.label == 'Range start' %}
+                    From {% elif form.label == 'Range end' %} To
+                    {% elif form.label == 'Id' %}{% elif form.label == 'Name' %}
+                    Column name {% else %}{{ form.label }} {% endif %}</label>
+                {{ form }}
+              </div>
+            {% endfor %}
+
+            <p style="align-self: end;">
+              <button type="button" style="color: red" id="delButton"
+                      class="btn btn-link">Delete
+              </button>
+            </p>
+          </div>
+        </div>
+        <button type="button" id="add_column_button" class="btn btn-primary">Add
+          Column
+        </button>
+
+      </div>
+
+    </div>
+
+
+    <br>
+
+  </form>
+
+{% endblock %}
+
+{% block scripts %}
+  <script>
+      const addButton = document.querySelector('#add_column_button')
+      const totalNewForms = document.querySelector('#id_form-TOTAL_FORMS')
+
+      addButton.addEventListener('click', function () {
+          const inputsDataInsert = document.querySelector('.contDataInputs')
+          const currentForms = document.querySelectorAll('.formCont')
+          let currentFormsCount = currentForms.length
+          const copyEmptyForm = document.querySelector('#emptyForm').cloneNode(true)
+
+          copyEmptyForm.setAttribute('class', 'formCont')
+          copyEmptyForm.setAttribute('id', `form-${currentFormsCount}`)
+          const regex = new RegExp('__prefix__', 'g')
+          copyEmptyForm.innerHTML = copyEmptyForm.innerHTML.replace(regex, currentFormsCount)
+          copyEmptyForm.querySelectorAll('input, select').forEach((el) => {
+              el.name = el.name.replace('__prefix__', currentFormsCount)
+              el.value = ''
+          })
+          copyEmptyForm.innerHTML = copyEmptyForm.innerHTML.replace(regex, currentFormsCount)
+          {#totalNewForms.setAttribute('value', currentFormsCount + 1)#}
+          {#totalNewForms //setAttribute('value', currentFormsCount + 1)#}
+          {#totalNewForms.setAttribute('name', `form-${currentFormsCount + 1}-id`)#}
+
+          console.log(totalNewForms)
+          inputsDataInsert.append(copyEmptyForm)
+
+
+          let deleteButton = document.querySelectorAll('#delButton')
+          deleteButton.forEach(el => el.addEventListener('click', function () {
+              totalNewForms.value -= 2
+              this.parentElement.parentElement.remove()
+          }))
+          inputsDataInsert.addEventListener('change', function (event) {
+              const target = event.target;
+              let hiddenElems = target.parentElement.parentNode.querySelectorAll('.hiddenSelect');
+              if (target.nodeName === 'SELECT') {
+                  if (target.value === 'integer') {
+                      hiddenElems.forEach(el => el.style.visibility = 'visible')
+                  } else {
+                      hiddenElems.forEach(el => el.style.visibility = 'hidden')
+                  }
+
+              }
+          });
+          totalNewForms.value++
+      })
+
+      let formCont = document.querySelector('.formCont')
+      if (formCont) {
+          document.querySelector('.contDataInputs').addEventListener('change', function (e) {
+              const target = e.target;
+              let hiddenElems = target.parentElement.parentNode.querySelectorAll('.hiddenSelect');
+              if (target.nodeName === 'SELECT') {
+                  if (target.value === 'integer') {
+                      hiddenElems.forEach(el => el.style.visibility = 'visible')
+                  } else {
+                      hiddenElems.forEach(el => el.style.visibility = 'hidden')
+                  }
+              }
+          });
+          document.querySelector('.contDataInputs').addEventListener('click', function (e) {
+              if (e.target.id === 'delButton') {
+                  totalNewForms.value -= 1
+                  e.target.parentNode.parentElement.remove()
+              }
+          })
+
+      }
+  </script>
+{% endblock %}
+
+
+
+

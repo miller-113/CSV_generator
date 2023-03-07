@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+
+{% block title %}Login{% endblock %}
+
+{% block content %}
+  <div class="loginCont">
+    <h2>Login</h2>
+    <form method="post">
+      {% csrf_token %}
+      <p>
+        <input type="text" name="{{ form.username.name }}" autocapitalize="none" autocomplete="username" maxlength="150" value="{{ form.username.name|capfirst }}" required id="{{ form.username.id_for_label }}" onfocus="this.value='';this.style.color='black';">
+      </p>
+      <p>
+        <input type="text" name="{{ form.password.name }}" required id="{{ form.password.id_for_label }}" value="{{ form.password.name|capfirst }}" onfocus="this.type='password'; this.value=''; this.style.color='black';"/>
+      </p>
+
+      <button type="submit" class="btn btn-primary">Login</button>
+    </form>
+  </div>
+{% endblock %}

@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+
+  <div class="tableWrap">
+    <div class="flexTableHead" style="justify-content: flex-start; gap: 40px">
+      <h2>Sample schema</h2>
+      <div><a href="#">Edit scheme</a></div>
+    </div>
+    <table class="table table-bordered">
+      <thead>
+      <tr>
+        <th scope="col">#</th>
+        <th scope="col">Column name</th>
+        <th scope="col">Column type</th>
+      </tr>
+      </thead>
+      <tbody>
+      {% for column in schema.column_set.all %}
+        <tr>
+          <th scope="row">{{ column.id }}</th>
+          <td>{{ column.name }}</td>
+          <td>{{ column.type }}</td>
+        </tr>
+      {% endfor %}
+
+      </tbody>
+    </table>
+  </div>
+
+
+  <div class="tableWrap">
+    <div class="flexTableHead" >
+      <h2>Data sets</h2>
+      <div>
+        <form id="generate-data-form" method="post">
+           {% csrf_token %}
+          <label for="num-records">Rows: </label>
+          <input type="number" id="num-records" name="num-records" min="1" max="1000" required>
+          <button type="submit" id="generate-data-btn" class="btn btn-success">Generate Data</button>
+        </form>
+      </div>
+    </div>
+    <table class="table table-bordered">
+      <thead>
+      <tr>
+        <th scope="col">#</th>
+        <th scope="col">Created</th>
+        <th scope="col">Status</th>
+        <th scope="col">Actions</th>
+      </tr>
+      </thead>
+      <tbody id="tbody">
+      {% for dataset in schema.dataset.all %}
+        <tr>
+          <th scope="row">{{ dataset.id }}</th>
+          <td>{{ dataset.data }}</td>
+          <td data-status="{{ dataset.id }}">
+            {% if dataset.status %}
+              <button type="" disabled class="buttonReady btn btn-success">Ready</button>
+            {% else %}
+              <button type="" disabled class="buttonProcessing btn btn-success">Ready</button>
+
+            {% endif %}
+          </td>
+          <td data-link="{{ dataset.id }}">{% if dataset.status %}<a href="{% url 'schemas:download_csv' dataset.id %}">Download</a>{% endif %}</td>
+        </tr>
+      {% endfor %}
+
+      </tbody>
+    </table>
+  </div>
+{% endblock %}
+
+{% block scripts %}
+  <script>
+      $('#generate-data-btn').click(function(event) {
+          event.preventDefault();
+
+          // Get the number of records to generate
+          var numRecords = $('#num-records').val();
+
+          // Send a POST request to the Django view
+          $.ajax({
+              url: '{% url 'schemas:generate_data' schema.id %}',
+              method: 'POST',
+              data: {
+                  'num_records': numRecords,
+                  'csrfmiddlewaretoken': '{{ csrf_token }}'
+              },
+              success: function(data) {
+
+                  let dataSetData = JSON.parse(data['data_set'])[0]
+                  let newColumn = `
+                          <tr>
+                            <th scope="row">${dataSetData['pk']}</th>
+                            <td>${dataSetData['fields']['data']}</td>
+                            <td data-status="${dataSetData['pk']}"><button type="" disabled class="buttonReady btn btn-success">Ready</button></td>
+                            <td data-link="13"><a href="/schemas/download_csv/${dataSetData['pk']}">Download</a></td>
+                          </tr>
+                  `
+                  // Update the status label and add a "Download" button
+                  // using the URL to the generated CSV file returned in the JSON response
+                  {#debugger#}
+
+                  $('#tbody').append(newColumn)
+
+              }
+          });
+      });
+  </script>
+{% endblock %}
